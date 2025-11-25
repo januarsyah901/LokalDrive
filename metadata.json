@@ -1,0 +1,5 @@
+{
+  "name": "LokalDrive",
+  "description": "A lightning-fast local file sharing server for LAN networks. Drag, drop, and share instantly without internet.",
+  "requestFramePermissions": []
+}
