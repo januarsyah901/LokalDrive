@@ -54,83 +54,102 @@ export const getFileType = (fileName: string): FileType => {
   return FileType.OTHER;
 };
 
-// Simulate local storage "Server"
-class LocalFileServer {
-  private files: FileItem[] = [...INITIAL_FILES];
-  private totalSpace = 1000000000; // 1 GB
+// API URL - change this if backend runs on different port
+const API_URL = 'http://localhost:3001/api';
 
+// Network-based File Server (connects to Express backend)
+class LocalFileServer {
   async getFiles(): Promise<FileItem[]> {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...this.files]), 600); // Simulate network latency
-    });
+    try {
+      const response = await fetch(`${API_URL}/files`);
+      if (!response.ok) throw new Error('Failed to fetch files');
+      const files = await response.json();
+
+      // Prepend API_URL to file URLs if they're relative
+      return files.map((file: any) => ({
+        ...file,
+        url: file.url.startsWith('http') ? file.url : `http://localhost:3001${file.url}`
+      }));
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      // Fallback to initial mock data if server is not available
+      return [...INITIAL_FILES];
+    }
   }
 
   async uploadFile(file: File): Promise<FileItem> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newItem: FileItem = {
-          id: Math.random().toString(36).substr(2, 9),
-          name: file.name,
-          size: file.size,
-          type: getFileType(file.name),
-          uploadedAt: new Date().toISOString(),
-          url: URL.createObjectURL(file), // Local blob URL for preview and download
-          aiAnalyzed: false
-        };
-        this.files.unshift(newItem);
-        resolve(newItem);
-      }, 1500); // Simulate upload time
-    });
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+      const fileItem = await response.json();
+
+      // Prepend API_URL to file URL if it's relative
+      fileItem.url = fileItem.url.startsWith('http') ? fileItem.url : `http://localhost:3001${fileItem.url}`;
+
+      return fileItem;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
   }
 
   async deleteFile(id: string): Promise<void> {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Revoke URL if it was a blob to avoid memory leaks (optional optimization for mock)
-        const file = this.files.find(f => f.id === id);
-        if (file && file.url.startsWith('blob:')) {
-            URL.revokeObjectURL(file.url);
-        }
-        
-        this.files = this.files.filter(f => f.id !== id);
-        resolve();
-      }, 400);
-    });
+    try {
+      const response = await fetch(`${API_URL}/files/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Delete failed');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
   }
 
   async updateFileMetadata(id: string, metadata: { description: string; tags: string[] }): Promise<FileItem | null> {
-    return new Promise(resolve => {
-        const idx = this.files.findIndex(f => f.id === id);
-        if (idx !== -1) {
-            this.files[idx] = { ...this.files[idx], ...metadata, aiAnalyzed: true };
-            resolve(this.files[idx]);
-        } else {
-            resolve(null);
-        }
-    })
+    try {
+      const response = await fetch(`${API_URL}/files/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(metadata),
+      });
+
+      if (!response.ok) throw new Error('Update failed');
+      const fileItem = await response.json();
+
+      // Prepend API_URL to file URL if it's relative
+      fileItem.url = fileItem.url.startsWith('http') ? fileItem.url : `http://localhost:3001${fileItem.url}`;
+
+      return fileItem;
+    } catch (error) {
+      console.error('Error updating file metadata:', error);
+      return null;
+    }
   }
 
-  getStorageStats(): StorageStats {
-    const used = this.files.reduce((acc, curr) => acc + curr.size, 0);
-    
-    // Calculate distribution for chart
-    const distribution = this.files.reduce((acc, curr) => {
-        acc[curr.type] = (acc[curr.type] || 0) + curr.size;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const byType = [
-        { name: 'Images', value: distribution[FileType.IMAGE] || 0, color: '#f43f5e' },
-        { name: 'Videos', value: distribution[FileType.VIDEO] || 0, color: '#8b5cf6' },
-        { name: 'Docs', value: distribution[FileType.DOCUMENT] || 0, color: '#3b82f6' },
-        { name: 'Others', value: (distribution[FileType.ARCHIVE] || 0) + (distribution[FileType.OTHER] || 0), color: '#10b981' },
-    ].filter(i => i.value > 0);
-
-    return {
-      used,
-      total: this.totalSpace,
-      byType
-    };
+  async getStorageStats(): Promise<StorageStats> {
+    try {
+      const response = await fetch(`${API_URL}/storage-stats`);
+      if (!response.ok) throw new Error('Failed to fetch storage stats');
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching storage stats:', error);
+      // Fallback to default stats
+      return {
+        used: 0,
+        total: 1000000000,
+        byType: []
+      };
+    }
   }
 }
 

@@ -4,7 +4,7 @@ import { FileItem, FileType } from "../types";
 // Initialize Gemini Client
 // NOTE: In a real production app, this would be backend-side to protect the key.
 // Since this is a "Local Server" concept running on the user's machine, having the key here is acceptable for the demo context.
-const apiKey = process.env.API_KEY || ''; 
+const apiKey = import.meta.env.VITE_API_KEY || '';
 const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
 
 export const analyzeFileMetadata = async (file: FileItem): Promise<{ description: string; tags: string[] }> => {

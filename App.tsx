@@ -24,15 +24,26 @@ const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [uploadingFiles, setUploadingFiles] = useState<UploadProgress[]>([]);
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
-  
-  // Fake server IP for display
-  const serverIP = "192.168.1.42:3000";
+  const [serverInfo, setServerInfo] = useState<{ips: string[], port: number} | null>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
     const data = await localServer.getFiles();
+    const storageStats = await localServer.getStorageStats();
     setFiles(data);
-    setStats(localServer.getStorageStats());
+    setStats(storageStats);
+
+    // Fetch server info
+    try {
+      const response = await fetch('http://localhost:3001/api/server-info');
+      if (response.ok) {
+        const info = await response.json();
+        setServerInfo(info);
+      }
+    } catch (e) {
+      console.log('Server info not available');
+    }
+
     setIsLoading(false);
   }, []);
 
@@ -68,7 +79,8 @@ const App: React.FC = () => {
 
         setUploadingFiles(prev => prev.filter(u => u.fileName !== file.name));
         setFiles(prev => [newFile, ...prev]);
-        setStats(localServer.getStorageStats());
+        const storageStats = await localServer.getStorageStats();
+        setStats(storageStats);
     }
   };
 
@@ -83,7 +95,8 @@ const App: React.FC = () => {
         // Optimistically remove from UI
         setFiles(prev => prev.filter(f => f.id !== id));
         // Update storage stats
-        setStats(localServer.getStorageStats());
+        const storageStats = await localServer.getStorageStats();
+        setStats(storageStats);
     } catch (error) {
         console.error("Failed to delete file:", error);
         alert("Failed to delete file. Please try again.");
@@ -172,11 +185,22 @@ const App: React.FC = () => {
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
               <span className="text-xs font-semibold text-emerald-400">SERVER ONLINE</span>
             </div>
-            <p className="text-[10px] text-gray-400 mb-2">Access within WiFi:</p>
-            <div className="bg-dark-bg p-2 rounded border border-dashed border-gray-600 flex justify-between items-center group cursor-pointer hover:border-brand-500 transition-colors">
-              <code className="text-xs text-brand-400 font-mono">{serverIP}</code>
-              <Wifi size={12} className="text-gray-500 group-hover:text-brand-500" />
-            </div>
+            <p className="text-[10px] text-gray-400 mb-2">Access from other devices:</p>
+            {serverInfo && serverInfo.ips.length > 0 ? (
+              <div className="space-y-1">
+                {serverInfo.ips.map((ip, i) => (
+                  <div key={i} className="bg-dark-bg p-2 rounded border border-dashed border-gray-600 flex justify-between items-center group cursor-pointer hover:border-brand-500 transition-colors">
+                    <code className="text-xs text-brand-400 font-mono">{ip}:3000</code>
+                    <Wifi size={12} className="text-gray-500 group-hover:text-brand-500" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-dark-bg p-2 rounded border border-dashed border-gray-600 flex justify-between items-center">
+                <code className="text-xs text-gray-500 font-mono">Loading...</code>
+                <Wifi size={12} className="text-gray-500" />
+              </div>
+            )}
           </div>
 
           <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-brand-500/30 rounded-xl cursor-pointer bg-brand-500/5 hover:bg-brand-500/10 hover:border-brand-500 transition-all group relative overflow-hidden">
