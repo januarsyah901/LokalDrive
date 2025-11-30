@@ -2,8 +2,6 @@
 
 LokalDrive adalah aplikasi web file-sharing lokal yang berjalan di laptop/PC host. Memungkinkan pengguna dalam satu jaringan WiFi/LAN untuk berbagi file dengan cepat tanpa koneksi internet.
 
-![LokalDrive UI](https://via.placeholder.com/800x400?text=LokalDrive+Preview)
-
 ## 🌟 Fitur Utama
 
 *   **Drag & Drop Upload**: Upload file dengan mudah antar perangkat.
@@ -11,6 +9,7 @@ LokalDrive adalah aplikasi web file-sharing lokal yang berjalan di laptop/PC hos
 *   **Tanpa Login**: Akses langsung via IP Address host.
 *   **AI Analysis**: Integrasi Google Gemini untuk auto-tagging dan deskripsi file.
 *   **Dark Mode**: Antarmuka modern yang nyaman di mata.
+*   **Local Network Access**: Akses dari device manapun di jaringan WiFi yang sama.
 
 ---
 
@@ -18,78 +17,149 @@ LokalDrive adalah aplikasi web file-sharing lokal yang berjalan di laptop/PC hos
 
 Pastikan Anda telah menginstal **Node.js** di komputer Anda.
 
-### 1. Clone Repository
-
-Salin kode sumber ke komputer Anda:
-
-```bash
-git clone https://github.com/username/lokaldrive.git
-cd lokaldrive
-```
-
-### 2. Install Dependencies
-
-Install paket-paket yang diperlukan:
+### 1. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Konfigurasi API Key (Opsional)
+### 2. Setup Gemini API Key
 
-Untuk mengaktifkan fitur analisis file otomatis menggunakan AI, Anda memerlukan API Key dari Google Gemini.
-
-1.  Buat file `.env` di direktori utama.
-2.  Tambahkan baris berikut:
+Buat file `.env` di root folder:
 
 ```env
-API_KEY=paste_kunci_api_gemini_anda_disini
+VITE_API_KEY=your_gemini_api_key_here
 ```
 
-*Jika tidak diisi, fitur upload tetap berjalan, namun tombol "Analyze" akan menggunakan data simulasi.*
+Dapatkan API key dari: https://aistudio.google.com/app/apikey
 
-### 4. Jalankan Server
+### 3. Jalankan Server
 
-Jalankan aplikasi dalam mode development:
+Jalankan backend dan frontend sekaligus:
 
 ```bash
 npm start
-# atau
+```
+
+Atau jalankan terpisah:
+
+```bash
+# Terminal 1 - Backend Server (Port 3001)
+npm run server
+
+# Terminal 2 - Frontend (Port 3000)
 npm run dev
 ```
 
-Aplikasi biasanya akan berjalan di `http://localhost:3000`.
-
 ---
 
-## 📡 Cara Akses dari HP / Laptop Lain
+## 📱 Akses dari Device Lain
 
-Agar teman satu jaringan bisa mengakses LokalDrive:
-
-1.  Pastikan Laptop Host dan perangkat teman terhubung ke **WiFi yang sama**.
-2.  Cari **IP Address** Laptop Host:
-    *   **Windows**: Buka CMD, ketik `ipconfig`. Cari IPv4 Address (contoh: `192.168.1.15`).
-    *   **Mac/Linux**: Buka Terminal, ketik `ifconfig`.
-3.  Di HP/Laptop teman, buka browser dan ketik alamat IP tersebut diikuti port:
+Setelah server berjalan, Anda akan melihat output seperti:
 
 ```
-http://192.168.1.15:3000
+🚀 LokalDrive Server is running!
+
+Access from this device:
+   http://localhost:3000
+
+Access from other devices on your network:
+   http://192.168.1.100:3000
+   http://10.0.0.5:3000
+```
+
+### Cara Akses dari HP/Laptop/Tablet Lain:
+
+1. **Pastikan device terhubung ke WiFi yang sama** dengan host
+2. **Buka browser** di device tersebut
+3. **Ketik salah satu IP address** yang ditampilkan (contoh: `http://192.168.1.100:3000`)
+4. **Upload dan download file** seperti biasa!
+
+### Tips:
+- Gunakan **Chrome/Safari/Firefox** untuk kompatibilitas terbaik
+- **Bookmark** IP address untuk akses cepat
+- **Share IP address** via WhatsApp/Telegram ke teman yang ingin akses
+
+---
+
+## 🔧 Troubleshooting
+
+### Tidak bisa akses dari device lain?
+
+1. **Cek WiFi**: Pastikan semua device di jaringan WiFi yang sama
+2. **Firewall**: Nonaktifkan firewall sementara atau allow port 3000 dan 3001
+3. **VPN**: Matikan VPN jika aktif
+4. **Restart Server**: Stop server (Ctrl+C) lalu jalankan `npm start` lagi
+
+### AI Analysis tidak berfungsi?
+
+1. Pastikan `VITE_API_KEY` sudah diisi di file `.env`
+2. Restart dev server setelah menambahkan API key
+3. Cek koneksi internet (Gemini API memerlukan internet)
+
+### Upload tidak berfungsi?
+
+1. Cek apakah backend server berjalan (port 3001)
+2. Lihat console browser untuk error
+3. Pastikan folder `uploads/` bisa di-write
+
+---
+
+## 📁 File Storage
+
+- File yang di-upload disimpan di folder **`uploads/`**
+- Metadata file disimpan di **`files-metadata.json`**
+- Kedua folder/file ini sudah ada di `.gitignore`
+
+---
+
+## 🛡️ Security Notes
+
+⚠️ **PENTING**: LokalDrive dirancang untuk penggunaan **jaringan lokal pribadi** (WiFi rumah/kantor).
+
+- Jangan expose ke internet publik
+- Tidak ada autentikasi/authorization
+- Semua orang di jaringan WiFi yang sama bisa akses
+- Cocok untuk sharing file sementara di lingkungan terpercaya
+
+---
+
+## 🚀 Tech Stack
+
+- **Frontend**: React + TypeScript + Vite
+- **Backend**: Node.js + Express
+- **AI**: Google Gemini API
+- **Storage**: File System (Local)
+- **UI**: TailwindCSS + Lucide Icons
+- **Charts**: Recharts
+
+---
+
+## 📝 Development
+
+```bash
+# Development mode (frontend only)
+npm run dev
+
+# Backend server only
+npm run server
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
 ---
 
-## 📂 Struktur Folder
+## 📄 License
 
-*   `/src` - Kode sumber React.
-*   `/services` - Logika "Backend" simulasi dan integrasi API.
-*   `/components` - Komponen UI (Card, Chart, dll).
-
-## ⚠️ Catatan Keamanan
-
-Aplikasi ini didesain untuk penggunaan **Jaringan Lokal (Trusted Network)** seperti rumah, kelas, atau kantor kecil.
-*   Siapapun yang mengetahui IP dan Port bisa mengunduh file yang ada di list.
-*   Fitur hapus file aktif untuk semua pengguna dalam mode demo ini.
+MIT License - Feel free to use and modify!
 
 ---
 
-Built with ❤️ using **React** & **Google Gemini API**.
+## 🙏 Credits
+
+Built with ❤️ using React, Express, and Google Gemini AI.
+

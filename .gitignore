@@ -40,6 +40,10 @@ lerna-debug.log*
 # Vite
 vite.log
 
+# Uploaded files and metadata
+uploads/
+files-metadata.json
+
 # Testing
 coverage/
 
